@@ -43,5 +43,12 @@ RSpec.describe "Weather", type: :request do
         expect(flash[:alert]).to eq("Param is missing or the value is empty: zip_code")
       end
     end
+
+    it "should provide an error message when the address can't be found" do
+      allow_any_instance_of(OpenStreetMap::Client).to receive(:search).and_return([])
+      get "/forecast", params: params
+      expect(response.status).to eq(404)
+      expect(flash[:alert]).to eq("The provided address could not be found. Please try again.")
+    end
   end
 end
