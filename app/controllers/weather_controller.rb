@@ -13,6 +13,10 @@ class WeatherController < ApplicationController
       flash[:alert] = first_letter + message_remainder
 
       render status: 422
+    rescue StandardError => e
+      flash[:alert] = e.message
+
+      render status: 422
     end
   end
 
