@@ -160,7 +160,7 @@ class WeatherService
       periods = results.dig("properties", "periods")
 
       if periods.present?
-        current_info = periods.select { |day| ["Today", "This Afternoon", "Tonight"].include?(day["name"]) }.first
+        current_info = periods.select { |day| ["Today", "This Afternoon", "Tonight", "Overnight"].include?(day["name"]) }.first
 
         return {
           temperature: "#{current_info['temperature']}&deg;#{current_info['temperatureUnit']}",
