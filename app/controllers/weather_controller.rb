@@ -44,6 +44,16 @@ class WeatherController < ApplicationController
   # }
   def forecast
     begin
+      @cached = false
+      zip_code = weather_params.last
+      cached_result = Rails.cache.fetch(zip_code, expires_in: 30.minutes)
+
+      if cached_result.present?
+        @cached = true
+        @current_temperature = cached_result
+        return
+      end
+
       client = OpenStreetMap::Client.new
       address_result = client.search(q: weather_params.join(" "),
                                       format: 'json',
@@ -58,8 +68,8 @@ class WeatherController < ApplicationController
         weather_service = WeatherService.new(lat: lat, lon: lon)
 
         @current_temperature = weather_service.current_temperature
-        
-        # TODO: Add Caching
+
+        Rails.cache.fetch(zip_code, expires_in: 30.minutes) { @current_temperature }
       else
         flash[:alert] = "The provided address could not be found. Please try again."
 
