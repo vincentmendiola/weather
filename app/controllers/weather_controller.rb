@@ -52,7 +52,14 @@ class WeatherController < ApplicationController
                                     ).try(:first)
 
       if address_result.present?
-        # TODO: Add WeatherService
+        lat = address_result["lat"]
+        lon = address_result["lon"]
+
+        weather_service = WeatherService.new(lat: lat, lon: lon)
+
+        @current_temperature = weather_service.current_temperature
+        
+        # TODO: Add Caching
       else
         flash[:alert] = "The provided address could not be found. Please try again."
 
