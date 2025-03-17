@@ -1,0 +1,17 @@
+%form.container-md.mt-3.mb-5{ action: "/forecast", method: "get" }
+  - if flash[:alert]
+    %div.alert.alert-danger.col
+      = flash[:alert]
+  .row.mb-3
+    .col
+      %input.form-control{ name: "street", value: params[:street], placeholder: "Street", required: true }
+  .row
+    .col-md.mb-3
+      %input.form-control{ name: "city", value: params[:city], placeholder: "City", required: true }
+    .col-md.mb-3
+      -# TODO: Standardize list of states by using a select field.
+      %input.form-control{ name: "state", value: params[:state], placeholder: "State", required: true }
+    .col-md.mb-3
+      %input.form-control{ type: 'number', min: 1, maxlength: 5, name: "zip_code", value: params[:zip_code], placeholder: "Zip Code", required: true }
+  %button.btn.btn-primary.w-100
+    Submit

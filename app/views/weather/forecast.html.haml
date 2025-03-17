@@ -1,0 +1,15 @@
+= render "form"
+
+- if @current_temperature
+  .container-sm.w-50
+    .card.text-center
+      .card-header
+        %h2 Current Temperature
+      .card-body
+        %h3= @current_temperature[:temperature].html_safe
+        - if @current_temperature[:detailed_forecast].present?
+          .card-text.text-left
+            = @current_temperature[:detailed_forecast]
+        - if @cached
+          %small
+            *This result is has been cached.
