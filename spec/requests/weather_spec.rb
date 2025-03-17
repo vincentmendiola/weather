@@ -72,5 +72,90 @@ RSpec.describe "Weather", type: :request do
       expect(response.status).to eq(200)
       expect(assigns[:current_temperature]).to eq({ detailed_forecast: nil, temperature: "22&deg;F" })
     end
+
+    it "should cache the current temperature" do
+      allow_any_instance_of(WeatherService).to receive(:weather_info).and_return({ "properties" => { "forecast" => "https://api.weather.gov/gridpoints/MTR/97,82/forecast" } })
+      allow_any_instance_of(OpenStreetMap::Client).to receive(:search).and_return([{ "lat" => 1, "lon" => 2 }])
+      allow(JSON).to receive(:parse).and_return(
+        { 
+          "properties" => { 
+            "periods" => [
+              {
+                "name" => "Today",
+                "temperature" => 22,
+                "temperatureUnit" => "F"
+              }
+            ]
+          } 
+        }
+      )
+
+      get "/forecast", params: params
+      expect(response.status).to eq(200)
+      expect(assigns[:current_temperature]).to eq({ detailed_forecast: nil, temperature: "22&deg;F" })
+      expect(Rails.cache.read(params[:zip_code])).to eq({ detailed_forecast: nil, temperature: "22&deg;F" })
+    end
+
+    it "should use the cached version of the current temperature" do
+      service_double = instance_double(WeatherService)
+      allow(WeatherService).to receive(:new).and_return(service_double)
+      allow(service_double).to receive(:current_temperature).and_return("")
+
+      Rails.cache.write(params[:zip_code], { detailed_forecast: nil, temperature: "22&deg;F" })
+
+      get "/forecast", params: params
+      expect(response.status).to eq(200)
+      expect(service_double).not_to have_received(:current_temperature)
+    end
+
+    it "should expire the cache of the current temperature" do
+      time = nil
+      params[:zip_code] = "12345"
+      Timecop.freeze(32.minutes.ago) do
+        allow_any_instance_of(WeatherService).to receive(:weather_info).and_return({ "properties" => { "forecast" => "https://api.weather.gov/gridpoints/MTR/97,82/forecast" } })
+        allow_any_instance_of(OpenStreetMap::Client).to receive(:search).and_return([{ "lat" => 1, "lon" => 2 }])
+        allow(JSON).to receive(:parse).and_return(
+          { 
+            "properties" => { 
+              "periods" => [
+                {
+                  "name" => "Today",
+                  "temperature" => 22,
+                  "temperatureUnit" => "F"
+                }
+              ]
+            } 
+          }
+        )
+
+        get "/forecast", params: params
+        expect(response.status).to eq(200)
+        expect(assigns[:current_temperature]).to eq({ detailed_forecast: nil, temperature: "22&deg;F" })
+        expect(Rails.cache.read(params[:zip_code])).to eq({ detailed_forecast: nil, temperature: "22&deg;F" })
+      end
+      
+      expect(Rails.cache.read(params[:zip_code])).to be_nil
+
+      allow_any_instance_of(WeatherService).to receive(:weather_info).and_return({ "properties" => { "forecast" => "https://api.weather.gov/gridpoints/MTR/97,82/forecast" } })
+      allow_any_instance_of(OpenStreetMap::Client).to receive(:search).and_return([{ "lat" => 1, "lon" => 2 }])
+      allow(JSON).to receive(:parse).and_return(
+        { 
+          "properties" => { 
+            "periods" => [
+              {
+                "name" => "Today",
+                "temperature" => 44,
+                "temperatureUnit" => "F"
+              }
+            ]
+          } 
+        }
+      )
+
+      get "/forecast", params: params
+      expect(response.status).to eq(200)
+      expect(assigns[:current_temperature]).to eq({ detailed_forecast: nil, temperature: "44&deg;F" })
+      expect(Rails.cache.read(params[:zip_code])).to eq({ detailed_forecast: nil, temperature: "44&deg;F" })
+    end
   end
 end
