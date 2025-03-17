@@ -1,7 +1,11 @@
 require 'rails_helper'
 
-RSpec.describe "Weathers", type: :request do
+RSpec.describe "Weather", type: :request do
   describe "GET /index" do
-    pending "add some examples (or delete) #{__FILE__}"
+    it "should return the home page" do
+      get "/"
+      expect(response.status).to eq(200)
+    end
+  end
   end
 end
